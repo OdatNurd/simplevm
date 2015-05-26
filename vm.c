@@ -189,13 +189,13 @@ static void evaluate (VMContext *context, Instruction *instruction)
         /* Push the next byte onto the stack. We pre-increment the instruction pointer since it's currently
          * sitting on the push instruction. */
         case PUSH:
-            context_stack_push (context, instruction->parameters[0]);
+            ctx_stack_push (context, instruction->parameters[0]);
             break;
 
         /* Pop the top value from the stack. This will also display the value that was popped. */
         case POP:
             {
-                int result = context_stack_pop (context);
+                int result = ctx_stack_pop (context);
                 fprintf (stderr, "<<POP>> %d\n", result);
                 break;
             }
@@ -206,7 +206,7 @@ static void evaluate (VMContext *context, Instruction *instruction)
 
         /* Pop two values from the stack, add them together, and then push the result back. */
         case ADD:
-            context_stack_push (context, context_stack_pop (context) + context_stack_pop (context));
+            ctx_stack_push (context, ctx_stack_pop (context) + ctx_stack_pop (context));
             break;
 
         /* The HALT instruction sets the HALT flag on this context, telling the interpreter that all

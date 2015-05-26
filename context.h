@@ -35,13 +35,13 @@ typedef struct
 /***********************************************************************************************************/
 
 /* Initialize a VM context to run the provided program. */
-void context_init (VMContext *context, int *program, int programLength);
+void ctx_init (VMContext *context, int *program, int programLength);
 
 /* Push a value onto the stack of the provided VM context. */
-void context_stack_push (VMContext *context, int value);
+void ctx_stack_push (VMContext *context, int value);
 
 /* Pop a value from the stack. */
-int context_stack_pop (VMContext *context);
+int ctx_stack_pop (VMContext *context);
 
 /***********************************************************************************************************/
 

@@ -14,7 +14,7 @@
 /***********************************************************************************************************/
 
 /* Initialize a VM context to run the provided program. */
-void context_init (VMContext *context, int *program, int programLength)
+void ctx_init (VMContext *context, int *program, int programLength)
 {
     /* Zero it. */
     memset (context, 0, sizeof (VMContext));
@@ -35,7 +35,7 @@ void context_init (VMContext *context, int *program, int programLength)
 
 
 /* Push a value onto the stack of the provided VM context. */
-void context_stack_push (VMContext *context, int value)
+void ctx_stack_push (VMContext *context, int value)
 {
     /* Increment the stack pointer and then store the value. The stack pointer is -1 when empty. */
     context->stack[++context->sp] = value;
@@ -44,7 +44,7 @@ void context_stack_push (VMContext *context, int value)
 /***********************************************************************************************************/
 
 /* Pop a value from the stack. */
-int context_stack_pop (VMContext *context)
+int ctx_stack_pop (VMContext *context)
 {
     /* Get the value at the current stack position, then decrement the stack pointer. It becomes -1 when the
      * stack is empty. */
