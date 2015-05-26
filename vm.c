@@ -20,6 +20,7 @@ static const char *opcode_name (Opcode opcode)
         case ADD:   return "ADD";
         case RADD:  return "RADD";
         case RDEC:  return "RDEC";
+        case RJNE:  return "RJNE";
         case HALT:  return "HALT";
         case IHALT: return "IHALT";
     }
@@ -112,6 +113,10 @@ static int opcode_operand_count (Opcode opcode)
         case RDEC:
             return 1;
 
+        /* Requires a register and a jump offset. */
+        case RJNE:
+            return 2;
+
         /* These operate on the stack or otherwise do not require parameters. */
         case NOP:
         case POP:  
@@ -158,6 +163,10 @@ static const char *opcode_operand_mask (Opcode opcode)
         /* Needs the register to decrement. */
         case RDEC:
             return "r";
+
+        /* Requires a register and a jump offset. */
+        case RJNE:
+            return "ri";
 
         /* These operate on the stack or otherwise do not require parameters. */
         case NOP:
@@ -328,6 +337,19 @@ static void evaluate (VMContext *context, Instruction *instruction)
                 int reg1 = instruction->parameters[0];
                 int reg2 = instruction->parameters[1];
                 ctx_stack_push (context, context->registers[reg1] + context->registers[reg2]);
+            }
+            break;
+
+        /* If the register is not equal to the item at the top of the stack, jump the IP by the offset
+         * provided, which can be negative. */
+        case RJNE:
+            {
+                int reg = instruction->parameters[0];
+                int ofs = instruction->parameters[1];
+                int val = ctx_stack_peek (context);
+
+                if (context->registers[reg] != val)
+                    new_ip = context->ip + ofs;
             }
             break;
 

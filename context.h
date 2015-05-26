@@ -43,6 +43,9 @@ void ctx_stack_push (VMContext *context, int value);
 /* Pop a value from the stack. */
 int ctx_stack_pop (VMContext *context);
 
+/* Peek at the item at the top of the stack without popping it. Returns what ctx_stack_pop() would return. */
+int ctx_stack_peek (VMContext *context);
+
 /***********************************************************************************************************/
 
 #endif
