@@ -2,9 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
-
-/* This specifies how large of a stack the VM is allowed to have. This is specified in stack entries. */
-#define CONTEXT_STACK_SIZE 256
+#include "context.h"
 
 /* This specifies the number of parameters (at maximum) an opcode can have. */
 #define MAX_OPCODE_PARAMS 5
@@ -79,28 +77,6 @@ typedef enum
     /* The total number of registers. */
     REGISTER_COUNT,
 } Register;
-
-typedef struct
-{
-    /* The program being executed. This is a set of integers that are the opcodes and their operands. We also
-     * keep a note of how big the list is. */
-    int *program;
-    int pSize;
-
-    /* True if a halt opcode has been encountered in this program, false otherwise. */
-    int halted;
-
-    /* The instruction pointer; this points to the instruction to be executed in the program. */
-    int ip;
-
-    /* The operations stack for this context, and the index of the next slot. The index is -1 when the stack
-     * is empty. */
-    int stack[CONTEXT_STACK_SIZE];
-    int sp;
-
-    /* The registerss for this particular context. */
-    int registers[REGISTER_COUNT];
-} VMContext;
 
 /* A simple program. */
 int program[] = {
@@ -274,21 +250,6 @@ void vmtrace (VMContext *context, Instruction *instruction)
     fprintf (stderr, "\n");
 }
 
-/* Push a value onto the stack of the provided VM context. */
-void context_stack_push (VMContext *context, int value)
-{
-    /* Increment the stack pointer and then store the value. The stack pointer is -1 when empty. */
-    context->stack[++context->sp] = value;
-}
-
-/* Pop a value from the stack. */
-int context_stack_pop (VMContext *context)
-{
-    /* Get the value at the current stack position, then decrement the stack pointer. It becomes -1 when the
-     * stack is empty. */
-    return context->stack[context->sp--];
-}
-
 /* Evaluate (execute) a single VM instruction in the provided context. */
 void evaluate (VMContext *context, Instruction *instruction)
 {
@@ -350,30 +311,12 @@ void interpret (VMContext *context)
     }
 }
 
-/* Initialize a VM context to run the provided program. */
-void init_context (VMContext *context, int *program, int programLength)
-{
-    /* Zero it. */
-    memset (context, 0, sizeof (VMContext));
-
-    /* Set up the program. */
-    context->program = program;
-    context->pSize   = programLength;
-    context->ip      = 0;
-
-    /* The stack starts empty. */
-    context->sp = -1;
-
-    /* Not initially halted. */
-    context->halted = 0;
-}
-
 int main (int argc, char **argv)
 {
     VMContext context;
 
     /* Set up a program context and then run it. */
-    init_context (&context, program, sizeof (program) / sizeof (int));
+    context_init (&context, program, sizeof (program) / sizeof (int));
     interpret (&context);
  
     return 0;

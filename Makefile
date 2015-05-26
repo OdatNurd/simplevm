@@ -2,8 +2,8 @@ all: vm
 
 #
 # The list of C files to compile.
-CFILES=vm.c
-HEADERS=
+CFILES=vm.c context.c
+HEADERS=context.h
 
 #
 # The C compiler to use and the flags to pass it.
