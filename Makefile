@@ -7,7 +7,7 @@ HEADERS=
 
 #
 # The C compiler to use and the flags to pass it.
-CFLAGS=-g -Wall -Wextra
+CFLAGS=-g -Wall
 CC=gcc
 
 #
