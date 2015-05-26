@@ -259,7 +259,10 @@ static void vmtrace (VMContext *context, Instruction *instruction)
     for (i = 0 ; i < instruction->pCount ; i++)
     {
         if (mask[i] == 'r')
-            fprintf (stderr, " %s ", register_name (instruction->parameters[i]));
+        {
+            int reg = instruction->parameters[i];
+            fprintf (stderr, " %s (%d) ", register_name (reg), context->registers[reg]);
+        }
         else
             fprintf (stderr, " %d ", instruction->parameters[i]);
     }
