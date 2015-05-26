@@ -32,7 +32,6 @@ typedef struct
 //     int registers[REGISTER_COUNT];
 } VMContext;
 
-
 /***********************************************************************************************************/
 
 /* Initialize a VM context to run the provided program. */

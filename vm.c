@@ -1,99 +1,16 @@
+/***********************************************************************************************************/
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
 #include "context.h"
+#include "vm.h"
 
-/* This specifies the number of parameters (at maximum) an opcode can have. */
-#define MAX_OPCODE_PARAMS 5
-
-/* This represents the various VM Opcodes that can be issued in our program. */
-typedef enum
-{
-    /* Do nothing. */
-    NOP=0,
-
-    /* Push the operand onto the stack. */
-    PUSH,
-
-    /* Pop the top item from the stack. */
-    POP,
-
-    /* Set a register. */
-    SET,
-       
-    /* Add values. */
-    ADD,
-
-    /* Halt program execution. The second version is used by the interpreter internally to signal that the
-     * program provided did not have its own halt statement. */
-    HALT,
-    IHALT,
-} Opcode;
-
-/* The IHALT instruction is a special internal HALT instruction that terminals the program but also has a
- * reason why. 
- *
- * The IHALT always has at least 1 parameter, which is the reason for the error and is one of the values in
- * this enumeration. Depending on the error, other parameters may exist. For example, if the error is that an
- * opcode was missing a parameter, the opcode in question is carried in another parameter. */
-typedef enum
-{
-    /* A mysterious error of mystery has occurred. */
-    IHALT_UNKNOWN,
-
-    /* The program code was found to contain an IHALT instruction, which is not allowed. */
-    IHALT_IHALT_EXPLICIT,
-
-    /* The HALT opcode was missing at the end of the operation. */
-    IHALT_MISSING_OPCODE,
-
-    /* The opcode decoded was missing some number of parameters. The opcode in question is in the second
-     * paramter to the IHALT opcode. */
-    IHALT_MISSING_OPCODE_PARAMETER,
-} IHALT_Reason;
-
-/* This structure represents a decoded instruction from the program stream. */
-typedef struct
-{
-    /* The opcode that indicates what the instruction is supposed to do. */
-    Opcode opcode;
-
-    /* The parameters to the opcode, and a description of how many of the slots are used. */
-    int parameters[MAX_OPCODE_PARAMS];
-    int pCount;
-} Instruction;
-
-typedef enum
-{
-    /* General purpose registers. */
-    REG_A,
-    REG_B,
-    REG_C,
-    REG_D,
-    REG_E,
-    REG_F,
-
-    /* The total number of registers. */
-    REGISTER_COUNT,
-} Register;
-
-/* A simple program. */
-int program[] = {
-    /* Push two values. */
-    PUSH, 5,
-    PUSH, 6,
-
-    /* Add them. */
-    ADD,
-
-    /* Pop the result and then halt. */
-    POP,
-    HALT
-};
+/***********************************************************************************************************/
 
 /* Convert an opcode into a textual name. */
-const char *opcode_name (Opcode opcode)
+static const char *opcode_name (Opcode opcode)
 {
     switch (opcode)
     {
@@ -110,13 +27,15 @@ const char *opcode_name (Opcode opcode)
     return "???";
 }
 
+/***********************************************************************************************************/
+
 /* Convert the error reason from an IHALT instruction into a human readable string. The opcode paramter
  * provided is only valid in cases where decode_instruction() detected an error that requires the offending
  * opcode to be used in the error and for which it remembers to set it. Otherwise it's probably NOP. 
  *
  * This *might* use static storage, so make a copy of the return value if you want it to remain valid between
  * calls. */
-const char *ihalt_error_reason (IHALT_Reason errorReason, Opcode opcode)
+static const char *ihalt_error_reason (IHALT_Reason errorReason, Opcode opcode)
 {
     /* Only used for errors that need an opcode. */
     static char buffer[256];
@@ -146,8 +65,10 @@ const char *ihalt_error_reason (IHALT_Reason errorReason, Opcode opcode)
     return "So broken I don't even know that the error is an unknown error!";
 }
 
+/***********************************************************************************************************/
+
 /* Obtain the number of operands an opcode expects. */
-int opcode_operand_count (Opcode opcode)
+static int opcode_operand_count (Opcode opcode)
 {
     switch (opcode)
     {
@@ -175,11 +96,13 @@ int opcode_operand_count (Opcode opcode)
     return 0;
 }
 
+/***********************************************************************************************************/
+
 /* Decode the next instruction in the program stream of the given context into the buffer provided. 
  *
  * The instruction comes out as an internal halt (IHALT) if there is an error fetching the opcode or its
  * paramters. */
-void decode_instruction (VMContext *context, Instruction *instruction)
+static void decode_instruction (VMContext *context, Instruction *instruction)
 {
     Opcode opcode;
     int i,count;
@@ -230,8 +153,10 @@ void decode_instruction (VMContext *context, Instruction *instruction)
         instruction->parameters[i] = context->program[context->ip + i + 1];
 }
 
+/***********************************************************************************************************/
+
 /* Output a trace of the instruction that the VM is currently sitting at. */
-void vmtrace (VMContext *context, Instruction *instruction)
+static void vmtrace (VMContext *context, Instruction *instruction)
 {
     int i;
 
@@ -250,8 +175,10 @@ void vmtrace (VMContext *context, Instruction *instruction)
     fprintf (stderr, "\n");
 }
 
+/***********************************************************************************************************/
+
 /* Evaluate (execute) a single VM instruction in the provided context. */
-void evaluate (VMContext *context, Instruction *instruction)
+static void evaluate (VMContext *context, Instruction *instruction)
 {
     switch (instruction->opcode)
     {
@@ -291,8 +218,10 @@ void evaluate (VMContext *context, Instruction *instruction)
     }
 }
 
+/***********************************************************************************************************/
+
 /* Run the program in the provided context.  */
-void interpret (VMContext *context)
+void vm_interpret (VMContext *context)
 {
     Instruction instruction;
 
@@ -311,15 +240,5 @@ void interpret (VMContext *context)
     }
 }
 
-int main (int argc, char **argv)
-{
-    VMContext context;
-
-    /* Set up a program context and then run it. */
-    context_init (&context, program, sizeof (program) / sizeof (int));
-    interpret (&context);
- 
-    return 0;
-}
-
+/***********************************************************************************************************/
 

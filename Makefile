@@ -2,7 +2,7 @@ all: vm
 
 #
 # The list of C files to compile.
-CFILES=vm.c context.c
+CFILES=main.c vm.c context.c
 HEADERS=context.h
 
 #
