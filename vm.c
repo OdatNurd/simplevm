@@ -180,6 +180,11 @@ static void vmtrace (VMContext *context, Instruction *instruction)
 /* Evaluate (execute) a single VM instruction in the provided context. */
 static void evaluate (VMContext *context, Instruction *instruction)
 {
+    /* The new IP is going to be the current IP, plus 1 to skip over this instruction, plus however many
+     * parameters this instruction took. */
+    int new_ip = context->ip + instruction->pCount + 1;
+
+    /* Handle based on opcode. */
     switch (instruction->opcode)
     {
         /* Do nothing. */
@@ -216,6 +221,10 @@ static void evaluate (VMContext *context, Instruction *instruction)
             context->halted = 1;
             break;
     }
+
+    /* Update the IP on return. */
+    context->ip = new_ip;
+      
 }
 
 /***********************************************************************************************************/
@@ -228,15 +237,12 @@ void vm_interpret (VMContext *context)
     /* Keep looping until we determine that we are done running. */
     while (context->halted == 0)
     {
-        /* Decode the next instruction and output it. */
+        /* Decode the next instruction and set what the new IP will be to execute the next instruction. */
         decode_instruction (context, &instruction);
         vmtrace (context, &instruction);
 
-        /* Run the instruction now. */
+        /* Execute the instruction now. */
         evaluate (context, &instruction);
-
-        /* Advance the instruction pointer now. */
-        context->ip += instruction.pCount + 1;
     }
 }
 
