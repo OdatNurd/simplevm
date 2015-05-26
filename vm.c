@@ -128,6 +128,49 @@ static int opcode_operand_count (Opcode opcode)
 
 /***********************************************************************************************************/
 
+/* Obtain the operand mask for an opcode. This is a simple string that contains one character for each of the
+ * operands, where each character is laid out as follows:
+ *     i: an integer number
+ *     r: a register
+ *
+ * This is used by the trace functionality to display operands properly. */
+static const char *opcode_operand_mask (Opcode opcode)
+{
+    switch (opcode)
+    {
+        /* Need a value to push. */
+        case PUSH: 
+            return "i";
+
+        /* Need the register to set. */
+        case SET:  
+            return "r";
+
+        /* Need two registers to add. */
+        case RADD:
+            return "rr";
+
+        /* These operate on the stack or otherwise do not require parameters. */
+        case NOP:
+        case POP:  
+        case ADD:  
+        case HALT: 
+            return "";
+
+        /* The IHALT instruction actualy takes 1 or more arguments, but it's not allowed to appear in user
+         * programs, so as far as this is concerned, it takes none. This allows for us to detect that it
+         * exists in the program stream and flag it as an error without having to fiddle with worrying if it
+         * has enough parameters. */
+        case IHALT:
+            return "";
+    }
+
+    /* Because the compiler is kind of stupid. */
+    return "";
+}
+
+/***********************************************************************************************************/
+
 /* Decode the next instruction in the program stream of the given context into the buffer provided. 
  *
  * The instruction comes out as an internal halt (IHALT) if there is an error fetching the opcode or its
@@ -189,6 +232,7 @@ static void decode_instruction (VMContext *context, Instruction *instruction)
 static void vmtrace (VMContext *context, Instruction *instruction)
 {
     int i;
+    const char *mask;
 
     /* Detect errors in the user program. These are developer errors because they indicate that the bytecode
      * stream is observably broken. */
@@ -199,9 +243,17 @@ static void vmtrace (VMContext *context, Instruction *instruction)
         return;
     }
 
+    /* This string mask tells us what each of the operands is, so that we can display it properly. */
+    mask = opcode_operand_mask (instruction->opcode);
+
     fprintf (stderr, ">>> %s", opcode_name (instruction->opcode));
     for (i = 0 ; i < instruction->pCount ; i++)
-        fprintf (stderr, " %d ", instruction->parameters[i]);
+    {
+        if (mask[i] == 'r')
+            fprintf (stderr, " %s ", register_name (instruction->parameters[i]));
+        else
+            fprintf (stderr, " %d ", instruction->parameters[i]);
+    }
     fprintf (stderr, "\n");
 }
 
