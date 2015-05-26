@@ -19,6 +19,7 @@ static const char *opcode_name (Opcode opcode)
         case SET:   return "SET";
         case ADD:   return "ADD";
         case RADD:  return "RADD";
+        case RDEC:  return "RDEC";
         case HALT:  return "HALT";
         case IHALT: return "IHALT";
     }
@@ -106,6 +107,10 @@ static int opcode_operand_count (Opcode opcode)
         /* Need two registers to add. */
         case RADD:
             return 2;
+              
+        /* Needs the register to decrement. */
+        case RDEC:
+            return 1;
 
         /* These operate on the stack or otherwise do not require parameters. */
         case NOP:
@@ -149,6 +154,10 @@ static const char *opcode_operand_mask (Opcode opcode)
         /* Need two registers to add. */
         case RADD:
             return "rr";
+
+        /* Needs the register to decrement. */
+        case RDEC:
+            return "r";
 
         /* These operate on the stack or otherwise do not require parameters. */
         case NOP:
@@ -300,6 +309,14 @@ static void evaluate (VMContext *context, Instruction *instruction)
         /* Pop two values from the stack, add them together, and then push the result back. */
         case ADD:
             ctx_stack_push (context, ctx_stack_pop (context) + ctx_stack_pop (context));
+            break;
+
+        /* Get the value of the register provided in the first operand and subtract one from it. */
+        case RDEC:
+            {
+                int reg = instruction->parameters[0];
+                context->registers[reg]--;
+            }
             break;
 
         /* Get the values of the two registers used as operands and push the result of adding them. */

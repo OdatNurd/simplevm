@@ -11,8 +11,9 @@
 /* A simple program. */
 int program[] = {
     /* Set up the A and B  registers. */
-    PUSH, 2,
+    PUSH, 3,
     SET, REG_A,
+    RDEC, REG_A,
     PUSH, 3,
     SET, REG_B,
 

@@ -24,6 +24,9 @@ typedef enum
     /* Take two operands (two registers) and add them together, pushing the result to the stack. */
     RADD,
 
+    /* Decrement the register in the first operand. */
+    RDEC,
+
     /* Halt program execution. The second version is used by the interpreter internally to signal that the
      * program provided did not have its own halt statement. */
     HALT,
