@@ -4,13 +4,18 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
-#include "context.h"
 #include "vm.h"
 
 /***********************************************************************************************************/
 
 /* A simple program. */
 int program[] = {
+    /* Set up the A and B  registers. */
+    PUSH, 5,
+    SET, REG_A,
+    PUSH, 6,
+    SET, REG_B,
+
     /* Push two values. */
     PUSH, 5,
     PUSH, 6,

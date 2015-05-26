@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
-#include "context.h"
 #include "vm.h"
 
 /***********************************************************************************************************/
@@ -21,6 +20,29 @@ static const char *opcode_name (Opcode opcode)
         case ADD:   return "ADD";
         case HALT:  return "HALT";
         case IHALT: return "IHALT";
+    }
+
+    /* This isn't a default case so that we can determine when we forgot to modify this switch. */
+    return "???";
+}
+
+/***********************************************************************************************************/
+
+/* Convert a register into a textual name. */
+static const char *register_name (Register reg)
+{
+    switch (reg)
+    {
+        case REG_A: return "REG_A";
+        case REG_B: return "REG_B";
+        case REG_C: return "REG_C";
+        case REG_D: return "REG_D";
+        case REG_E: return "REG_E";
+        case REG_F: return "REG_F";
+
+        /* Do nothing here, so we fall through and trigger on the default below. */
+        case REGISTER_COUNT:
+                    break;
     }
 
     /* This isn't a default case so that we can determine when we forgot to modify this switch. */
@@ -76,10 +98,13 @@ static int opcode_operand_count (Opcode opcode)
         case PUSH: 
             return 1;
 
+        /* Need the register to set. */
+        case SET:  
+            return 1;
+
         /* These operate on the stack or otherwise do not require parameters. */
         case NOP:
         case POP:  
-        case SET:  
         case ADD:  
         case HALT: 
             return 0;
@@ -207,6 +232,12 @@ static void evaluate (VMContext *context, Instruction *instruction)
 
         /* Not currently handled. */
         case SET:
+            {
+                int dReg = instruction->parameters[0];
+                int value = ctx_stack_pop (context);
+                context->registers[dReg] = value;
+                fprintf (stderr, "<<SET %s>> %d\n", register_name (dReg), value);
+            }
             break;
 
         /* Pop two values from the stack, add them together, and then push the result back. */

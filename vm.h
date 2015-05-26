@@ -7,6 +7,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include "registers.h"
+#include "opcodes.h"
 #include "context.h"
 
 /***********************************************************************************************************/
@@ -15,30 +17,6 @@
 #define MAX_OPCODE_PARAMS 5
 
 /***********************************************************************************************************/
-
-/* This represents the various VM Opcodes that can be issued in our program. */
-typedef enum
-{
-    /* Do nothing. */
-    NOP=0,
-
-    /* Push the operand onto the stack. */
-    PUSH,
-
-    /* Pop the top item from the stack. */
-    POP,
-
-    /* Set a register. */
-    SET,
-       
-    /* Add values. */
-    ADD,
-
-    /* Halt program execution. The second version is used by the interpreter internally to signal that the
-     * program provided did not have its own halt statement. */
-    HALT,
-    IHALT,
-} Opcode;
 
 /* The IHALT instruction is a special internal HALT instruction that terminals the program but also has a
  * reason why. 
@@ -72,20 +50,6 @@ typedef struct
     int parameters[MAX_OPCODE_PARAMS];
     int pCount;
 } Instruction;
-
-typedef enum
-{
-    /* General purpose registers. */
-    REG_A,
-    REG_B,
-    REG_C,
-    REG_D,
-    REG_E,
-    REG_F,
-
-    /* The total number of registers. */
-    REGISTER_COUNT,
-} Register;
 
 /***********************************************************************************************************/
 

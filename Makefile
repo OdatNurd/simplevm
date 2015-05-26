@@ -3,7 +3,7 @@ all: vm
 #
 # The list of C files to compile.
 CFILES=main.c vm.c context.c
-HEADERS=context.h
+HEADERS=vm.h registers.h opcodes.h 
 
 #
 # The C compiler to use and the flags to pass it.
