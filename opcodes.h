@@ -18,8 +18,11 @@ typedef enum
     /* Set the register in the operand to the value on the top of the stack. */
     SET,
        
-    /* Add values. */
+    /* Pop the top two values on the stack, and then push the result of their addition. */
     ADD,
+
+    /* Take two operands (two registers) and add them together, pushing the result to the stack. */
+    RADD,
 
     /* Halt program execution. The second version is used by the interpreter internally to signal that the
      * program provided did not have its own halt statement. */

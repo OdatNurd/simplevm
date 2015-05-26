@@ -11,16 +11,18 @@
 /* A simple program. */
 int program[] = {
     /* Set up the A and B  registers. */
-    PUSH, 5,
+    PUSH, 2,
     SET, REG_A,
-    PUSH, 6,
+    PUSH, 3,
     SET, REG_B,
 
-    /* Push two values. */
-    PUSH, 5,
+    /* Add them. Result is left on the stack. */
+    RADD, REG_A, REG_B,
+
+    /* Push one more values. */
     PUSH, 6,
 
-    /* Add them. */
+    /* Add the two items on the stack. */
     ADD,
 
     /* Pop the result and then halt. */

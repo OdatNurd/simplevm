@@ -18,6 +18,7 @@ static const char *opcode_name (Opcode opcode)
         case POP:   return "POP";
         case SET:   return "SET";
         case ADD:   return "ADD";
+        case RADD:  return "RADD";
         case HALT:  return "HALT";
         case IHALT: return "IHALT";
     }
@@ -101,6 +102,10 @@ static int opcode_operand_count (Opcode opcode)
         /* Need the register to set. */
         case SET:  
             return 1;
+
+        /* Need two registers to add. */
+        case RADD:
+            return 2;
 
         /* These operate on the stack or otherwise do not require parameters. */
         case NOP:
@@ -243,6 +248,15 @@ static void evaluate (VMContext *context, Instruction *instruction)
         /* Pop two values from the stack, add them together, and then push the result back. */
         case ADD:
             ctx_stack_push (context, ctx_stack_pop (context) + ctx_stack_pop (context));
+            break;
+
+        /* Get the values of the two registers used as operands and push the result of adding them. */
+        case RADD:
+            {
+                int reg1 = instruction->parameters[0];
+                int reg2 = instruction->parameters[1];
+                ctx_stack_push (context, context->registers[reg1] + context->registers[reg2]);
+            }
             break;
 
         /* The HALT instruction sets the HALT flag on this context, telling the interpreter that all
