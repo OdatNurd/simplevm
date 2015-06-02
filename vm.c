@@ -2,8 +2,6 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <string.h>
-#include <unistd.h>
 #include "vm.h"
 
 /***********************************************************************************************************/
@@ -213,7 +211,7 @@ static void decode_instruction (VMContext *context, Instruction *instruction)
     }
 
     /* Fetch this opcode and determine how many operands it requires. */
-    opcode = context->program[context->ip];
+    opcode = (Opcode) context->program[context->ip];
     count  = opcode_operand_count (opcode);
 
     /* If this is an IHALT instruction, that's bad. */
@@ -257,7 +255,8 @@ static void vmtrace (VMContext *context, Instruction *instruction)
     if (instruction->opcode == IHALT)
     {
         fprintf (stderr, ">> *** << Invalid program detected\n");
-        fprintf (stderr, ">> *** << %s\n", ihalt_error_reason (instruction->parameters[0], instruction->parameters[1]));
+        fprintf (stderr, ">> *** << %s\n", ihalt_error_reason ((IHALT_Reason) instruction->parameters[0],
+                                                               (Opcode) instruction->parameters[1]));
         return;
     }
 
@@ -270,7 +269,7 @@ static void vmtrace (VMContext *context, Instruction *instruction)
         if (mask[i] == 'r')
         {
             int reg = instruction->parameters[i];
-            fprintf (stderr, " %s (%d) ", register_name (reg), context->registers[reg]);
+            fprintf (stderr, " %s (%d) ", register_name ((Register) reg), context->registers[reg]);
         }
         else
             fprintf (stderr, " %d ", instruction->parameters[i]);
@@ -314,7 +313,7 @@ static void evaluate (VMContext *context, Instruction *instruction)
                 int dReg = instruction->parameters[0];
                 int value = ctx_stack_pop (context);
                 context->registers[dReg] = value;
-                fprintf (stderr, "<<SET %s>> %d\n", register_name (dReg), value);
+                fprintf (stderr, "<<SET %s>> %d\n", register_name ((Register) dReg), value);
             }
             break;
 

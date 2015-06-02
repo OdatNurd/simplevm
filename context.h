@@ -28,7 +28,7 @@ typedef struct
     int stack[CONTEXT_STACK_SIZE];
     int sp;
 
-    /* The registerss for this particular context. */
+    /* The registers for this particular context. */
     int registers[REGISTER_COUNT];
 } VMContext;
 
