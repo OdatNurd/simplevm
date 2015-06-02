@@ -36,9 +36,11 @@ typedef enum
      * make it sit in an infinite loop comparing, for example). */
     RJNE,
 
-    /* Halt program execution. The second version is used by the interpreter internally to signal that the
-     * program provided did not have its own halt statement. */
+    /* Halt program execution. This indicates a normal halt. */
     HALT,
+
+    /* Halt program execution. This is used by the interpreter internally to signal that the program
+     * provided did not have its own halt statement. */
     IHALT,
 } Opcode;
 

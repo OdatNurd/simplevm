@@ -12,9 +12,10 @@
  * interpreter is kept here so that there can be multiple interpreters at once if desired. */
 typedef struct
 {
-    /* The program being executed. This is a set of integers that are the opcodes and their operands. We also
-     * keep a note of how big the list is. */
+    /* The program being executed. This is a set of integers that are the opcodes and their operands. */
     int *program;
+
+    /* How big the program is, in integers (i.e. the size of the program array). */
     int pSize;
 
     /* True if a halt opcode has been encountered in this program, false otherwise. */
@@ -23,9 +24,11 @@ typedef struct
     /* The instruction pointer; this points to the instruction to be executed in the program. */
     int ip;
 
-    /* The operations stack for this context, and the index of the next slot. The index is -1 when the stack
-     * is empty. */
+    /* The operations stack for this context, and the index of the next slot. */
     int stack[CONTEXT_STACK_SIZE];
+
+    /* The stack pointer for the stack in this context. The index -1 indicates that the stack is empty;
+     * otherwise the value here is the index of the item at the top of the stack. */
     int sp;
 
     /* The registers for this particular context. */
