@@ -52,17 +52,15 @@ static const char *register_name (Register reg)
 
 /***********************************************************************************************************/
 
-/* Convert the error reason from an IHALT instruction into a human readable string. The opcode paramter
+/* Convert the error reason from an IHALT instruction into a human readable string. The opcode parameter
  * provided is only valid in cases where decode_instruction() detected an error that requires the offending
  * opcode to be used in the error and for which it remembers to set it. Otherwise it's probably NOP. 
  *
  * This *might* use static storage, so make a copy of the return value if you want it to remain valid between
  * calls. */
+static char ihalt_error_buffer[256];
 static const char *ihalt_error_reason (IHALT_Reason errorReason, Opcode opcode)
 {
-    /* Only used for errors that need an opcode. */
-    static char buffer[256];
-
     /* Handle the different IHalt reasons. */
     switch (errorReason)
     {
@@ -81,8 +79,8 @@ static const char *ihalt_error_reason (IHALT_Reason errorReason, Opcode opcode)
 
         /* The bytecode stream ends with an opcode that needs more parameters than are available. */
         case IHALT_MISSING_OPCODE_PARAMETER:
-            snprintf (buffer, sizeof (buffer), "Opcode (%s) requires more parameters than are available in the bytecode stream", opcode_name (opcode));
-            return buffer;
+            snprintf (ihalt_error_buffer, sizeof (ihalt_error_buffer), "Opcode (%s) requires more parameters than are available in the bytecode stream", opcode_name (opcode));
+            return ihalt_error_buffer;
     }
 
     return "So broken I don't even know that the error is an unknown error!";
@@ -122,7 +120,7 @@ static int opcode_operand_count (Opcode opcode)
         case HALT: 
             return 0;
 
-        /* The IHALT instruction actualy takes 1 or more arguments, but it's not allowed to appear in user
+        /* The IHALT instruction actually takes 1 or more arguments, but it's not allowed to appear in user
          * programs, so as far as this is concerned, it takes none. This allows for us to detect that it
          * exists in the program stream and flag it as an error without having to fiddle with worrying if it
          * has enough parameters. */
@@ -173,7 +171,7 @@ static const char *opcode_operand_mask (Opcode opcode)
         case HALT: 
             return "";
 
-        /* The IHALT instruction actualy takes 1 or more arguments, but it's not allowed to appear in user
+        /* The IHALT instruction actually takes 1 or more arguments, but it's not allowed to appear in user
          * programs, so as far as this is concerned, it takes none. This allows for us to detect that it
          * exists in the program stream and flag it as an error without having to fiddle with worrying if it
          * has enough parameters. */
@@ -190,13 +188,13 @@ static const char *opcode_operand_mask (Opcode opcode)
 /* Decode the next instruction in the program stream of the given context into the buffer provided. 
  *
  * The instruction comes out as an internal halt (IHALT) if there is an error fetching the opcode or its
- * paramters. */
+ * parameters. */
 static void decode_instruction (VMContext *context, Instruction *instruction)
 {
     Opcode opcode;
     int i,count;
 
-    /* Default the instruction to being an error halt, which takes 1 parameter. The paramter is filled with
+    /* Default the instruction to being an error halt, which takes 1 parameter. The parameter is filled with
      * the reason for the error, which at this point is unknown. */
     instruction->opcode        = IHALT;
     instruction->parameters[0] = IHALT_UNKNOWN;
@@ -226,7 +224,7 @@ static void decode_instruction (VMContext *context, Instruction *instruction)
     if (context->ip + opcode_operand_count (opcode) >= context->pSize)
     {
         /* In this case, we need to change the error message and also add in the offending opcode, which
-         * requires altering the paramter count. */
+         * requires altering the parameter count. */
         instruction->parameters[0] = IHALT_MISSING_OPCODE_PARAMETER;
         instruction->parameters[1] = opcode;
         instruction->pCount++;
@@ -237,7 +235,7 @@ static void decode_instruction (VMContext *context, Instruction *instruction)
     instruction->opcode = opcode;
     instruction->pCount = count;
 
-    /* Copy the required paramters over. We need to add 1 to the ip to skip over the instruction. */
+    /* Copy the required parameters over. We need to add 1 to the ip to skip over the instruction. */
     for (i = 0 ; i < count ; i++)
         instruction->parameters[i] = context->program[context->ip + i + 1];
 }
@@ -245,7 +243,7 @@ static void decode_instruction (VMContext *context, Instruction *instruction)
 /***********************************************************************************************************/
 
 /* Output a trace of the instruction that the VM is currently sitting at. */
-static void vmtrace (VMContext *context, Instruction *instruction)
+static void vm_trace (VMContext *context, Instruction *instruction)
 {
     int i;
     const char *mask;
@@ -377,7 +375,7 @@ void vm_interpret (VMContext *context)
     {
         /* Decode the next instruction and set what the new IP will be to execute the next instruction. */
         decode_instruction (context, &instruction);
-        vmtrace (context, &instruction);
+        vm_trace (context, &instruction);
 
         /* Execute the instruction now. */
         evaluate (context, &instruction);

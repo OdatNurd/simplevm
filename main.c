@@ -52,8 +52,7 @@ int main (int argc, char **argv)
     VMContext context;
 
     /* Set up a program context and then run it. */
-    ctx_init (&context, program, sizeof (program) / sizeof (int));
-    vm_interpret (&context);
+    vm_interpret (ctx_init (&context, program, sizeof (program) / sizeof (int)));
  
     return 0;
 }

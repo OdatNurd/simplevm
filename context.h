@@ -31,19 +31,37 @@ typedef struct
      * otherwise the value here is the index of the item at the top of the stack. */
     int sp;
 
+    /* This value is set to 1 whenever a stack push operation failed because the stack was already full, or
+     * when a stack pop failed because the stack was empty. When a stack operation completes successfully,
+     * this gets set to 0.
+     *
+     * The value is only changed when a stack operation is performed; at other times the value remains
+     * as-is. */
+    int stackOverUnder;
+
     /* The registers for this particular context. */
     int registers[REGISTER_COUNT];
 } VMContext;
 
 /***********************************************************************************************************/
 
-/* Initialize a VM context to run the provided program. */
-void ctx_init (VMContext *context, int *program, int programLength);
+/* Initialize a VM context to run the provided program, which is assumed to be of the given length.
+ *
+ * As a convenience, the initialized context is returned back by the call. */
+VMContext *ctx_init (VMContext *context, int *program, int programLength);
 
-/* Push a value onto the stack of the provided VM context. */
+/* Push a value onto the stack of the provided VM context.
+ *
+ * If the stack is not full, then the stack overflow bit is cleared and the function returns after pushing
+ * the item to the top of the stack and updating sp. If the stack is full, the stack overflow bit is set
+ * and the function returns without doing anything else. */
 void ctx_stack_push (VMContext *context, int value);
 
-/* Pop a value from the stack. */
+/* Pop a value from the stack and return it.
+ *
+ * If the stack is not empty, then the stack underflow bit is cleared and the function returns after
+ * removing the item from the top of the stack and updating sp. If the stack is empty, the stack underflow
+ * bit is set and the function returns 0. */
 int ctx_stack_pop (VMContext *context);
 
 /* Peek at the item at the top of the stack without popping it. Returns what ctx_stack_pop() would return. */
