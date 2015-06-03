@@ -2,6 +2,7 @@
   <dictionary name="tmartin">
     <words>
       <w>bytecode</w>
+      <w>ihalt</w>
       <w>opcode</w>
       <w>opcodes</w>
     </words>
