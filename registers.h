@@ -3,6 +3,8 @@
 
 /***********************************************************************************************************/
 
+/* The VM supports a series of registers for program use. Some instructions use implicit registers while
+ * others take register parameters to determine how/where they operate. */
 typedef enum
 {
     /* General purpose register A. */

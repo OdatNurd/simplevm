@@ -3,7 +3,11 @@
 
 /***********************************************************************************************************/
 
-/* This represents the various VM Opcodes that can be issued in our program. */
+/* Programs in the VM are made up of one or more Opcodes which describe the action to take. Each opcode can
+ * take 0 or more arguments (which appear after it in the bytecode stream).
+ *
+ * A valid program should terminate with a HALT opcode; the VM will issue an automatic IHALT opcode if it
+ * discovers an inconsistency in the bytecode, such as a missing HALT opcode, unknown OPCODE, etc. */
 typedef enum
 {
     /* Do nothing. */
