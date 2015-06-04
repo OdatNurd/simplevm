@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "vm.h"
+#include "context.h"
 
 /***********************************************************************************************************/
 
@@ -27,7 +28,6 @@ VMContext *ctx_init (VMContext *context, int *program, int programLength)
 
     /* The stack starts empty. */
     context->sp = -1;
-    context->stackOverUnder = 0;
 
     /* Not initially halted. */
     context->halted = 0;
@@ -48,13 +48,13 @@ void ctx_stack_push (VMContext *context, int value)
     /* Make sure there is room in the stack. */
     if (context->sp == CONTEXT_STACK_SIZE)
     {
-        context->stackOverUnder = 1;
+        context->vmFlags.stackOverflow = 1;
         return;
     }
 
     /* Increment the stack pointer and then store the value. The stack pointer is -1 when empty. */
     context->stack[++context->sp] = value;
-    context->stackOverUnder = 0;
+    context->vmFlags.stackOverflow = 0;
 }
 
 /***********************************************************************************************************/
@@ -69,13 +69,13 @@ int ctx_stack_pop (VMContext *context)
     /* Make sure there is something on the stack. */
     if (context->sp == -1)
     {
-        context->stackOverUnder = 1;
+        context->vmFlags.stackUnderflow = 1;
         return 0;
     }
 
     /* Get the value at the current stack position, then decrement the stack pointer. It becomes -1 when the
      * stack is empty. */
-    context->stackOverUnder = 0;
+    context->vmFlags.stackUnderflow = 0;
     return context->stack[context->sp--];
 }
 
@@ -89,12 +89,12 @@ int ctx_stack_peek (VMContext *context)
     /* Make sure there is something on the stack. */
     if (context->sp == -1)
     {
-        context->stackOverUnder = 1;
+        context->vmFlags.stackUnderflow = 1;
         return 0;
     }
 
     /* Get the value at the current stack position. */
-    context->stackOverUnder = 0;
+    context->vmFlags.stackUnderflow = 0;
     return context->stack[context->sp];
 }
 

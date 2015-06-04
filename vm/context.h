@@ -31,13 +31,17 @@ typedef struct
      * otherwise the value here is the index of the item at the top of the stack. */
     int sp;
 
-    /* This value is set to 1 whenever a stack push operation failed because the stack was already full, or
-     * when a stack pop failed because the stack was empty. When a stack operation completes successfully,
-     * this gets set to 0.
-     *
-     * The value is only changed when a stack operation is performed; at other times the value remains
-     * as-is. */
-    int stackOverUnder;
+    /* Special VM flags. This is a bit field. See the individual members for what the bits do and the
+     * circumstances in which they are set/cleared. */
+    struct {
+        /* After a stack push, this bit is set if the push failed due to a stack overflow. Otherwise it is
+         * cleared. */
+        unsigned int stackOverflow:1;
+
+        /* After a stack pop, this bit is set if the pop failed due to a stack underflow. Otherwise it is
+         * cleared. */
+        unsigned int stackUnderflow:1;
+    } vmFlags;
 
     /* The registers for this particular context. */
     int registers[REGISTER_COUNT];
