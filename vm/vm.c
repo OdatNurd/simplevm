@@ -2,7 +2,9 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdarg.h>
 #include "vm.h"
+#include "context.h"
 
 /***********************************************************************************************************/
 
@@ -81,6 +83,12 @@ static const char *ihalt_error_reason (IHALT_Reason errorReason, Opcode opcode)
         case IHALT_MISSING_OPCODE_PARAMETER:
             snprintf (ihalt_error_buffer, sizeof (ihalt_error_buffer), "Opcode (%s) requires more parameters than are available in the bytecode stream", opcode_name (opcode));
             return ihalt_error_buffer;
+
+        case IHALT_STACK_OVERFLOW:
+            return "Stack overflow";
+
+        case IHALT_STACK_UNDERFLOW:
+            return "Stack underflow";
     }
 
     return "So broken I don't even know that the error is an unknown error!";
@@ -185,6 +193,43 @@ static const char *opcode_operand_mask (Opcode opcode)
 
 /***********************************************************************************************************/
 
+/* Initialize an IHALT instruction. The reason for the halt will be the one provided. All other parameters
+ * are the parameters that are required for the specific error reason. It's up to the caller to pass in the
+ * required values in the required order. */
+static void init_ihalt_instruction (Instruction *instruction, IHALT_Reason reason, int params, ...)
+{
+    va_list args;
+
+    /* Minimum used parameters is 1, for the reason. */
+    int usedParams = 1;
+
+    /* Set up the opcode and the single known parameter, which is the reason for the halt. */
+    instruction->opcode = IHALT;
+    instruction->parameters[0] = reason;
+
+    /* Based on the reason, add in the extra parameters. */
+    va_start(args, params);
+    switch (reason)
+    {
+        /* The extra parameter is the first parameter, which we don't need special gymnastics to get. */
+        case IHALT_MISSING_OPCODE_PARAMETER:
+            instruction->parameters[1] = params;
+            usedParams++;
+            break;
+
+        /* va_arg(args, int); */
+
+        /* All other reasons require no parameters. */
+        default:
+            break;
+    }
+    va_end(args);
+
+    instruction->pCount = usedParams;
+}
+
+/***********************************************************************************************************/
+
 /* Decode the next instruction in the program stream of the given context into the buffer provided. 
  *
  * The instruction comes out as an internal halt (IHALT) if there is an error fetching the opcode or its
@@ -192,13 +237,10 @@ static const char *opcode_operand_mask (Opcode opcode)
 static void decode_instruction (VMContext *context, Instruction *instruction)
 {
     Opcode opcode;
-    int i,count;
+    int i, count;
 
-    /* Default the instruction to being an error halt, which takes 1 parameter. The parameter is filled with
-     * the reason for the error, which at this point is unknown. */
-    instruction->opcode        = IHALT;
-    instruction->parameters[0] = IHALT_UNKNOWN;
-    instruction->pCount        = 1;
+    /* Default the instruction to being an unknown error halt. */
+    init_ihalt_instruction (instruction, IHALT_UNKNOWN, 0);
 
     /* Leave if there is not an opcode left. */
     if (context->ip >= context->pSize)
@@ -210,7 +252,7 @@ static void decode_instruction (VMContext *context, Instruction *instruction)
 
     /* Fetch this opcode and determine how many operands it requires. */
     opcode = (Opcode) context->program[context->ip];
-    count  = opcode_operand_count (opcode);
+    count = opcode_operand_count (opcode);
 
     /* If this is an IHALT instruction, that's bad. */
     if (opcode == IHALT)
@@ -242,6 +284,26 @@ static void decode_instruction (VMContext *context, Instruction *instruction)
 
 /***********************************************************************************************************/
 
+/* Assume that the instruction passed in is an IHALT instruction and display the reason that the halt is
+ * happening. Once this is done, the VM context is marked as being halted. */
+static void vm_ihalt (VMContext *context, Instruction *instruction)
+{
+    /* The first parameter is always the error reason. */
+    IHALT_Reason errorReason = (IHALT_Reason) instruction->parameters[0];
+
+    /* Currently the only thing that uses the second parameter is the error about a missing opcode. */
+    Opcode missingOpcode = (Opcode) instruction->parameters[1];
+
+    /* Display the message now. */
+    fprintf (stderr, ">> *** << Invalid program detected\n");
+    fprintf (stderr, ">> *** << %s\n", ihalt_error_reason (errorReason, missingOpcode));
+
+    /* No more operations on this context now. */
+    context->halted = 1;
+}
+
+/***********************************************************************************************************/
+
 /* Output a trace of the instruction that the VM is currently sitting at. */
 static void vm_trace (VMContext *context, Instruction *instruction)
 {
@@ -252,9 +314,7 @@ static void vm_trace (VMContext *context, Instruction *instruction)
      * stream is observably broken. */
     if (instruction->opcode == IHALT)
     {
-        fprintf (stderr, ">> *** << Invalid program detected\n");
-        fprintf (stderr, ">> *** << %s\n", ihalt_error_reason ((IHALT_Reason) instruction->parameters[0],
-                                                               (Opcode) instruction->parameters[1]));
+        vm_ihalt (context, instruction);
         return;
     }
 
@@ -277,9 +337,33 @@ static void vm_trace (VMContext *context, Instruction *instruction)
 
 /***********************************************************************************************************/
 
+/* Check the stack overflow/undeflow bits in the provided context. If either is set, the appropriate error
+ * message is displayed, the VM is halted, and 1 is returned.
+ *
+ * If all is OK, 0 is returned instead. */
+static int check_stack (VMContext *context)
+{
+    Instruction iHalt;
+
+    if (context->vmFlags.stackOverflow)
+        init_ihalt_instruction (&iHalt, IHALT_STACK_OVERFLOW, 0);
+    else if (context->vmFlags.stackUnderflow)
+        init_ihalt_instruction (&iHalt, IHALT_STACK_UNDERFLOW, 0);
+    else
+        return 0;
+
+    vm_ihalt (context, &iHalt);
+    return 1;
+}
+
+/***********************************************************************************************************/
+
 /* Evaluate (execute) a single VM instruction in the provided context. */
 static void evaluate (VMContext *context, Instruction *instruction)
 {
+    /* Used to halt the VM if we encounter an error. */
+    Instruction ihalt;
+
     /* The new IP is going to be the current IP, plus 1 to skip over this instruction, plus however many
      * parameters this instruction took. */
     int new_ip = context->ip + instruction->pCount + 1;
@@ -295,21 +379,29 @@ static void evaluate (VMContext *context, Instruction *instruction)
          * sitting on the push instruction. */
         case PUSH:
             ctx_stack_push (context, instruction->parameters[0]);
+            if (check_stack (context))
+                break;
             break;
 
         /* Pop the top value from the stack. This will also display the value that was popped. */
         case POP:
             {
                 int result = ctx_stack_pop (context);
+                if (check_stack (context))
+                    break;
+
                 fprintf (stderr, "<<POP>> %d\n", result);
                 break;
             }
 
-        /* Not currently handled. */
+        /* Set a register from the stack. */
         case SET:
             {
                 int dReg = instruction->parameters[0];
                 int value = ctx_stack_pop (context);
+                if (check_stack (context))
+                    break;
+
                 context->registers[dReg] = value;
                 fprintf (stderr, "<<SET %s>> %d\n", register_name ((Register) dReg), value);
             }
@@ -317,7 +409,18 @@ static void evaluate (VMContext *context, Instruction *instruction)
 
         /* Pop two values from the stack, add them together, and then push the result back. */
         case ADD:
-            ctx_stack_push (context, ctx_stack_pop (context) + ctx_stack_pop (context));
+        {
+            int p1, p2;
+            p1 = ctx_stack_pop (context);
+            if (check_stack (context))
+                break;
+
+            p2 = ctx_stack_pop (context);
+            if (check_stack (context))
+                break;
+
+            ctx_stack_push (context, p1 + p2);
+        }
             break;
 
         /* Get the value of the register provided in the first operand and subtract one from it. */
@@ -334,6 +437,8 @@ static void evaluate (VMContext *context, Instruction *instruction)
                 int reg1 = instruction->parameters[0];
                 int reg2 = instruction->parameters[1];
                 ctx_stack_push (context, context->registers[reg1] + context->registers[reg2]);
+                if (check_stack (context))
+                    break;
             }
             break;
 
@@ -344,6 +449,8 @@ static void evaluate (VMContext *context, Instruction *instruction)
                 int reg = instruction->parameters[0];
                 int ofs = instruction->parameters[1];
                 int val = ctx_stack_peek (context);
+                if (check_stack (context))
+                    break;
 
                 if (context->registers[reg] != val)
                     new_ip = context->ip + ofs;
@@ -358,9 +465,9 @@ static void evaluate (VMContext *context, Instruction *instruction)
             break;
     }
 
-    /* Update the IP on return. */
-    context->ip = new_ip;
-      
+    /* Update the IP on return, unless we're halted now. */
+    if (context->halted == 0)
+        context->ip = new_ip;
 }
 
 /***********************************************************************************************************/

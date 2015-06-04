@@ -36,8 +36,14 @@ typedef enum
     IHALT_MISSING_OPCODE,
 
     /* The opcode decoded was missing some number of parameters. The opcode in question is in the second
-     * paramter to the IHALT opcode. */
+     * parameter to the IHALT opcode. */
     IHALT_MISSING_OPCODE_PARAMETER,
+
+    /* A stack push operation has failed due to the stack being full. */
+    IHALT_STACK_OVERFLOW,
+
+    /* A stack pop or peek operation has failed due to the stack being empty. */
+    IHALT_STACK_UNDERFLOW,
 } IHALT_Reason;
 
 /* This structure represents a decoded instruction from the program stream. */
