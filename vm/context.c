@@ -4,12 +4,6 @@
 #include <stdio.h>
 #include <string.h>
 #include "vm.h"
-#include "context.h"
-
-/***********************************************************************************************************/
-
-/* This specifies how large of a stack the VM is allowed to have. This is specified in stack entries. */
-#define CONTEXT_STACK_SIZE 256
 
 /***********************************************************************************************************/
 
@@ -46,7 +40,7 @@ VMContext *ctx_init (VMContext *context, int *program, int programLength)
 void ctx_stack_push (VMContext *context, int value)
 {
     /* Make sure there is room in the stack. */
-    if (context->sp == CONTEXT_STACK_SIZE)
+    if (context->sp == CONTEXT_STACK_SIZE - 1)
     {
         context->vmFlags.stackOverflow = 1;
         return;
