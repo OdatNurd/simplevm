@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include "config.h"
 #include "registers.h"
 #include "opcodes.h"
 #include "context.h"

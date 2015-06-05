@@ -51,6 +51,8 @@ int main (int argc, char **argv)
     /* Our interpreter context. */
     VMContext context;
 
+    printf ("%s\n", CORE_VERSION);
+
     /* Set up a program context and then run it. */
     vm_interpret (ctx_init (&context, program, sizeof (program) / sizeof (int)));
  

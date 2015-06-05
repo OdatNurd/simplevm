@@ -1,0 +1,16 @@
+#ifndef __CONFIGdotH__
+#define __CONFIGdotH__
+
+/***********************************************************************************************************/
+
+/* Set the version numbers from the CMakelists.txt file. */
+#define CORE_VERSION_MAJOR "@core_VERSION_MAJOR@"
+#define CORE_VERSION_MINOR "@core_VERSION_MINOR@"
+#define CORE_VERSION_PATCH "@core_VERSION_PATCH@"
+
+/* The complete version string for the core. */
+#define CORE_VERSION "CoreVM Lib " CORE_VERSION_MAJOR "." CORE_VERSION_MINOR "." CORE_VERSION_PATCH "\n"
+
+/***********************************************************************************************************/
+
+#endif
