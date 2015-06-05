@@ -4,4 +4,4 @@ project(simplevm)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
 # Add in projects now.
-add_subdirectory("vm")
+add_subdirectory("core")
