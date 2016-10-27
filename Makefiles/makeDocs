@@ -1,0 +1,46 @@
+#!/bin/sh
+
+# 
+# Did we get the argument that tells us what project
+# we are supposed to generate documentation for?
+#
+if [ "$1" == "" ] ; then
+    echo "Need to be given a project."
+    exit 1
+fi
+
+#
+# Did we get the argument that tells us the name of
+# this project?
+#
+if [ "$2" == "" ] ; then
+    echo "Need to provide a project name for this project."
+    exit 1
+fi
+
+#
+# Now we can fetch the version and revision of the overall
+# project. We stick them together into one variable.
+#
+PROJECT_NUMBER="`./Makefiles/getVersion .`_r`./Makefiles/getRevision .`"
+
+#
+# Output a header that says what we're generating
+# documentation for.
+#
+echo Generating documentation for: $1
+
+#
+# Now we are going to use sed to pull the Doxyfile from the
+# Makefiles directory, and rewrite it along the way. We need
+# to replace the project number that comes with the file
+# with the one we got here, and then also change the project
+# name as well.
+#
+# The output of sed is fed into Doxygen, which is then told to
+# get it's project information from standard in.
+#
+mkdir -p Doc/$1
+sed ./Makefiles/Doxyfile -e "s/@@VERSION@@/$PROJECT_NUMBER/" \
+                         -e "s^@@PROJECT@@^$1^" \
+                         -e "s/@@PROJECT_NAME@@/$2/" | doxygen -

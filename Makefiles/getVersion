@@ -1,0 +1,40 @@
+#!/bin/sh
+
+#
+# This is the version string that gets returned back if
+# there is an error trying to get the contents of the file
+# that contains the release number information.
+#
+ERROR_STR="GetVersion-CallError"
+
+#
+# We need to be invoked with a path that takes us from the 
+# current directory to the base of the project, so that we 
+# can get at the ReleaseNumber file. If no argument is 
+# given, then output a bogus version now.
+#
+if [ "$1" == "" ] ; then
+    echo $ERROR_STR
+    exit 0
+fi
+
+#
+# Try to pull the first line from the ReleaseNumber file. We 
+# direct stderr to /dev/null so that if the file can't be 
+# found, we get an empty string instead of an error message.
+#
+VERSION=`head -1 $1/Makefiles/ReleaseNumber 2> /dev/null` 
+
+#
+# If we didn't get a version number, then we can return the
+# bogus version now. If not, then we will use sed to remove
+# all leading and trailing whitespace, and then convert all
+# internal whitespace characters to underscores.
+#
+if [ "$VERSION" == "" ] ; then
+    echo $ERROR_STR
+else
+    echo $VERSION | sed -e "s/^[ \t]*//" -e "s/[ \t]*$$//" -e "s/[ \t][ \t]*/ /g" -e "s/[ ]/_/g"
+fi
+
+

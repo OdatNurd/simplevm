@@ -1,0 +1,108 @@
+###############################################################################
+#
+# Specify the name of the project, which will be used to form the name of the
+# output library.
+#
+###############################################################################
+NAME= core
+
+
+###############################################################################
+#
+# This specifies the type of library that this is. This can be:
+#  lib  - Generate a static library
+#  so   - Generate a shared object file (dynamic library)
+#
+###############################################################################
+TARGET_TYPE= lib
+
+
+###############################################################################
+#
+# Specify the source files for this library. You only need to specify one of
+# the three at a minimum, though you can specify any that you want.
+#
+###############################################################################
+MFILES= 
+CFILES= context.c vm.c
+CPPFILES= 
+
+
+###############################################################################
+#
+# Specify any special compiler flags for this library. The build system will
+# usually provide all that you need, so these are only needed in special cases.
+#
+###############################################################################
+TARGET_CFLAGS=
+TARGET_MFLAGS=
+TARGET_CPPFLAGS=
+
+
+###############################################################################
+#
+# Specify the relative path to the root of this source tree (the path to the
+# Makefiles directory). It'll be obvious if you get this wrong.
+#
+###############################################################################
+BASEDIR= ..
+
+
+###############################################################################
+#
+# Specify a list of subdirectories (assumed to be under the root of the current
+# source tree) that contain library headers that need to be included. This is
+# used if you store libraries not under the tree root directly or if you want
+# to not have to specify the library name in the include directive. You might
+# set this to "libsrc" if you store your libs in "treeroot/libsrc" instead of
+# "treeroot", or you might set it to "mylib" if your library is being stored
+# in "treeroot/mylib" but you don't want to include "mylib" in the include
+# path.
+#
+###############################################################################
+LIB_SUBDIRS=
+
+
+###############################################################################
+#
+# Provide a list of directories that should be created. This step happens
+# before anything else in the makefile. The directories built are relative to
+# the current directory unless you specify an absolute path.
+#
+###############################################################################
+DIRECTORIES= 
+
+
+###############################################################################
+#
+# Provide a list of files to be copied somewhere, and the directory they should
+# be copied to. The DIRECTORIES rule will be processed first, so it is safe to
+# copy files with an OUTPUT_DIR that is set to a directory that will be 
+# created.
+#
+###############################################################################
+COPYFILES=
+OUTPUT_DIR=
+
+###############################################################################
+#
+# Decide if we want builds to be verbose:
+#   YES - Commands used to build the library are displayed
+#   NO  - The build system just tells you what it is compiling/linking/etc
+#
+# Decide if build system problems should be colored or not:
+#   YES - Compiler/linker warnings and errors are colored for emphasis
+#   NO  - All output is normal
+#
+###############################################################################
+VERBOSE_BUILDS= NO
+COLOUR_WARNINGS= YES
+
+
+###############################################################################
+#
+# Pull in the build system, which will build the library.
+#
+###############################################################################
+include $(BASEDIR)/Makefiles/buildsystem.make   
+

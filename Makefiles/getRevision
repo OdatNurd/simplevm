@@ -1,0 +1,66 @@
+#!/bin/sh
+
+#
+# This is the revision number that we generate if we can't get at the project
+# root to fetch the correct revision.
+#
+DEFAULT_REV=0
+
+# 
+# We need to be invoked with a path that takes us from the current directory to
+# the base of the project. If that is the case, we need to report the default
+# revision.
+#
+if [ "$1" == "" ] ; then
+    echo $DEFAULT_REV
+    exit 0
+fi
+
+#
+# Does a RevisionNumber file exist in the Makefiles directory? If it does, then
+# we will use it instead of actually using git. This allows exported tarballs to
+# have the revision number of the code at the time it was released, since the
+# user may not have access to the repository.
+#
+if [ -e "$1/Makefiles/RevisionNumber" ]; then
+    #
+    # Try to pull the first line from the RevisionNumber file. We direct stderr
+    # to /dev/null so that if the file can't be found, we get an empty string
+    # instead of an error message.
+    #
+    REVISION=`head -1 $1/Makefiles/RevisionNumber 2> /dev/null` 
+
+    #
+    # If we didn't get a revision number, then we can return the bogus version
+    # now. If not, then we will use sed to remove all leading and trailing
+    # whitespace, and then convert all internal whitespace characters to
+    # underscores.
+    #
+    if [ "$REVISION" == "" ] ; then
+        echo $DEFAULT_REV
+    else
+        echo $REVISION | sed -e "s/^[ \t]*//" -e "s/[ \t]*$$//" -e "s/[ \t][ \t]*/ /g" -e "s/[ ]/_/g"
+    fi
+
+    #
+    # Done now.
+    #
+    exit
+fi
+
+
+#
+# Capture the short hash of the current head of the repository; this at least
+# will be an indication as to the state of the repository, which is what the old
+# subersion revision number did.
+#
+# Here we direct stderr to /dev/null so that on errors we can detect if the path
+# is bogus.
+#
+REVISION=`git rev-parse --verify --short HEAD 2> /dev/null`
+if [ $? != 0 ]; then
+    echo $DEFAULT_REV
+else
+    echo $REVISION
+fi
+
