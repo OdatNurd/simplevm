@@ -1,6 +1,0 @@
-<component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="vm - debug" type="CMakeRunConfiguration" factoryName="Application" singleton="true" WORKING_DIR="" PASS_PARENT_ENVS="FALSE" PROJECT_NAME="simplevm" TARGET_NAME="vm" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="simplevm" RUN_TARGET_NAME="vm">
-    <envs />
-    <method />
-  </configuration>
-</component>
