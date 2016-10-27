@@ -13,16 +13,16 @@ int program[] = {
 //     RDEC, REG_A,
 //     PUSH, 3,
 //     SET, REG_B,
-// 
+//
 //     /* Add them. Result is left on the stack. */
 //     RADD, REG_A, REG_B,
-// 
+//
 //     /* Push one more values. */
 //     PUSH, 6,
-// 
+//
 //     /* Add the two items on the stack. Result is left on the stack. */
 //     ADD,
-// 
+//
 //     /* Pop the result (also prints it). */
 //     POP,
 
@@ -51,11 +51,11 @@ int main (int argc, char **argv)
     /* Our interpreter context. */
     VMContext context;
 
-    printf ("%s\n", VERSION);
+    fprintf (stderr, "SimpleVM - %s (%s)\n\n", VERSION, REVISION);
 
     /* Set up a program context and then run it. */
     vm_interpret (ctx_init (&context, program, sizeof (program) / sizeof (int)));
- 
+
     return 0;
 }
 

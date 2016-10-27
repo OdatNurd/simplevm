@@ -8,7 +8,7 @@ NAME= vm
 
 ###############################################################################
 #
-# This specifies the type of project that this is. 
+# This specifies the type of project that this is.
 #
 ###############################################################################
 TARGET_TYPE= bin
@@ -20,9 +20,9 @@ TARGET_TYPE= bin
 # the three at a minimum, though you can use more than one if you need.
 #
 ###############################################################################
-MFILES= 
+MFILES=
 CFILES= main.c
-CPPFILES= 
+CPPFILES=
 
 
 ###############################################################################
@@ -120,14 +120,14 @@ OLIBS=
 # the current directory unless you specify an absolute path.
 #
 ###############################################################################
-DIRECTORIES= 
+DIRECTORIES=
 
 
 ###############################################################################
 #
 # Provide a list of files to be copied somewhere, and the directory they should
 # be copied to. The DIRECTORIES rule will be processed first, so it is safe to
-# copy files with an OUTPUT_DIR that is set to a directory that will be 
+# copy files with an OUTPUT_DIR that is set to a directory that will be
 # created.
 #
 ###############################################################################
@@ -154,5 +154,7 @@ COLOUR_WARNINGS= YES
 # Pull in the build system, which will build the project.
 #
 ###############################################################################
-include $(BASEDIR)/Makefiles/buildsystem.make   
+include $(BASEDIR)/Makefiles/buildsystem.make
 
+run: vm
+	@vm
