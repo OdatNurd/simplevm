@@ -1,0 +1,56 @@
+###############################################################################
+#
+# Specify that this is a copy target, so that the build system doesn't get mad
+# at there being no source files or targets to build.
+#
+###############################################################################
+TARGET_TYPE= copy
+
+
+###############################################################################
+#
+# Specify the relative path to the root of this source tree (the path to the
+# Makefiles directory). It'll be obvious if you get this wrong.
+#
+###############################################################################
+BASEDIR= @@BASE@@
+
+
+###############################################################################
+#
+# Provide a list of directories that should be created. This step happens
+# before anything else in the makefile. The directories built are relative to
+# the current directory unless you specify an absolute path.
+#
+###############################################################################
+DIRECTORIES= 
+
+
+###############################################################################
+#
+# Provide a list of files to be copied somewhere, and the directory they should
+# be copied to. The DIRECTORIES rule will be processed first, so it is safe to
+# copy files with an OUTPUT_DIR that is set to a directory that will be 
+# created.
+#
+###############################################################################
+COPYFILES=
+OUTPUT_DIR=
+
+###############################################################################
+#
+# Decide if we want builds to be verbose:
+#   YES - Commands used to build the project are displayed
+#   NO  - The build system just tells you what it is compiling/linking/etc
+#
+###############################################################################
+VERBOSE_BUILDS= NO
+
+
+###############################################################################
+#
+# Pull in the build system, which will build the project.
+#
+###############################################################################
+include $(BASEDIR)/Makefiles/buildsystem.make   
+

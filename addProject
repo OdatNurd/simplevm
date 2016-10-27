@@ -1,0 +1,484 @@
+#!/bin/bash
+
+###############################################################################
+#
+# Buildsystem add project helper
+#  - Nov 30/2004  Terence Martin (poindexter@nurdz.com)
+#     - Initially created
+#
+#  - Dec 2/2004   Terence Martin (poindexter@nurdz.com)
+#     - Changed the name to exclude the .sh and generate source files
+# 
+#  - Dec 3/2004   Terence Martin (poindexter@nurdz.com)
+#     - Some rewrites for clearer code, change template names to be better.
+#
+#
+###############################################################################
+
+
+#
+# Switch to the directory that the script is in, which should put us in the
+# the base directory of the current source tree. 
+# 
+cd `dirname $0`
+
+
+#
+# Set up the current source tree name for use in some messages.
+#
+CURRENT_TREE=`pwd | sed -e "s^$HOME^~^"`
+
+
+#
+# If there is no first or second argument, bail.
+#
+if [ "$1" == "" -o "$2" == "" ] ; then
+    echo ""
+    echo Usage: `basename $0` \<projectName\> \<projectType\[/lang\]\> \[dirName\]
+    echo ""
+    echo projectName can have path \(but no . or .. type paths\), where any
+    echo path provided specifies a directory under the root of the current
+    echo source tree \($CURRENT_TREE\). With no path, the 
+    echo project is added directly to source tree root.
+    echo ""
+    echo projectType is one of: bin, lib, so, copy, sub.
+    echo ""
+    echo For project types bin, lib and so, you can optionally append a language to
+    echo the end of the project type \(c,cpp,objc\). This will cause `basename $0` to
+    echo fill out the template Makefile with some filenames to compile, and also
+    echo generate a template file to get the project started.
+    echo ""
+    echo The special project type 'sub' creates a project directory in which
+    echo other projects will be put. It will create a Makefile template that
+    echo is set up to recurse into other subdirectories. For this project type,
+    echo the makefile is put in the last directory created, so if you want to
+    echo create a multi-level subproject, you should do it one directory at
+    echo a time.
+    echo ""
+    echo Note also that the Makefile generated for a sub project will contain 
+    echo rules to go into any directory that already exists, so you may want to
+    echo add the other projects first, then use this to add the sub-project so
+    echo that it will make the proper Makefile for you.
+    echo ""
+    echo dirName is optional. If present, it will be the directory name of
+    echo the newly added project. If not specified, the directory the project
+    echo is contained in will be the same as the project name.
+    echo ""
+    exit 1
+fi
+
+
+#
+# The first parameter is the project name (which may contain some
+# sort of path), so the following are valid:
+#    myProject
+#    libs/MyProject
+#    libs/static/MyProject
+#
+# We make two, one that is the actual project name and one that is
+# the path to the project.
+#
+PROJECT_NAME=`basename $1`
+PROJECT_PATH=`dirname $1`
+
+
+#
+# The second parameter is the project type. It can be one of 
+# bin,lib,so or copy. Additionally, a bin,lib or so project
+# may have a language specified after it with a / (e.g. bin/c).
+# If a language is specified, then we will generate some template
+# source code as well, and fill out the template makefile with the
+# name of the source file. 
+#
+# Because this looks like a path, we will use basename and dirname
+# to split them apart. Remember that dirname will return "." if there
+# is no path. This is our signal that only a project type was given.
+#
+BASE=`basename $2`
+OTHER=`dirname $2`
+
+
+#
+# If the directory comes back as '.', then there was no language specified,
+# and the basename will be the project type, with no template. However, if
+# OTHER is not '.', then it will be the project type, and the base name will
+# be the language. Keep in mind we're doing "base/lang" and what the path and
+# basename would be between that and "base".
+#
+if [ "$OTHER" == "." ]; then
+    PROJECT_TYPE=$BASE
+    PROJECT_LANGUAGE=no
+else
+    PROJECT_TYPE=$OTHER
+    PROJECT_LANGUAGE=$BASE
+fi
+
+
+#
+# The third parameter is the directory name. If it is not specified,
+# default it to the project name.
+#
+PROJECT_DIR=${3:-$PROJECT_NAME}
+
+
+#
+# Check to make sure that the project type is valid. For project types that
+# we know about, we will set up the PROJECT_MAKEFILE_TEMPLATE variable to be what
+# makefile template to use. For anything else, complain and then exit.
+#
+case "$PROJECT_TYPE" in
+    'bin')
+        PROJECT_MAKEFILE_TEMPLATE=Makefiles/bin_Makefile.template
+        ;;
+
+    'lib'|'so')
+        PROJECT_MAKEFILE_TEMPLATE=Makefiles/lib_Makefile.template
+        ;;
+
+    'copy')
+        PROJECT_MAKEFILE_TEMPLATE=Makefiles/copy_Makefile.template
+        ;;
+
+    'sub')
+        PROJECT_MAKEFILE_TEMPLATE=Makefiles/sub_Makefile.template
+        ;;
+
+    *)
+        echo "*** Error: Project type $PROJECT_TYPE is not valid."
+        echo "***        Valid project types are bin, lib, so, copy and sub"
+        echo ""
+        exit 1
+        ;;
+esac
+
+
+#
+# Set up the name of the project makefile to be generated by the template above.
+#
+PROJECT_MAKEFILE=$PROJECT_PATH/$PROJECT_DIR/Makefile
+
+
+#
+# If the language that was specified is not one that we understand, then force
+# it to be no and generate a warning. Along the way, set up the project language
+# extension, in case we want to generate any source files for this project.
+#
+case "$PROJECT_LANGUAGE" in
+    'c')
+        PROJECT_LANGUAGE_EXTENSION=c
+        ;;
+
+    'cpp')
+        PROJECT_LANGUAGE_EXTENSION=cpp
+        ;;
+
+    'objc')
+        PROJECT_LANGUAGE_EXTENSION=m
+        ;;
+
+    'no')
+        PROJECT_LANGUAGE_EXTENSION=none
+        ;;
+
+    *)
+        echo "*** Warning: Language type $PROJECT_LANGUAGE is not valid, ignoring."
+        echo "***          Valid languges are: c, cpp, objc"
+        echo ""
+        PROJECT_LANGUAGE=no
+        PROJECT_LANGUAGE_EXTENSION=none
+        ;;
+esac
+
+
+
+#
+# From the project name, determine what the BASEDIR in the Makefile
+# should be. This is easy, just replace every path component in the 
+# project name with "..". For neatness, make sure the first and last
+# character in the result isn't a path seperator.
+#
+PROJECT_BASEDIR_PATH=`echo $1 | sed -e "s^[^/][^/]*^..^g" -e "s/^\///" -e "s/\/$//"`
+
+
+#
+# Make a template filename for source files for this project.
+#
+PROJECT_SOURCE_TEMPLATE=Makefiles/${PROJECT_TYPE}_source.$PROJECT_LANGUAGE
+PROJECT_HEADER_TEMPLATE=Makefiles/${PROJECT_TYPE}_header.$PROJECT_LANGUAGE
+
+
+#
+# Make up the names of source files for this project. They're based on the name
+# of the project. For binary projects, the source filename needs to have _main
+# tacked onto the end. 
+#
+if [ "$PROJECT_TYPE" == "bin" ]; then
+    TMPPART=_main
+fi
+
+
+#
+# Generate filenames now, if the extensions aren't "none" (in which case, no language, so don't
+# bother.
+#
+if [ "$PROJECT_LANGUAGE_EXTENSION" != "none" ]; then
+    PROJECT_SOURCE_FILE=$PROJECT_PATH/$PROJECT_DIR/$PROJECT_NAME$TMPPART.$PROJECT_LANGUAGE_EXTENSION
+    PROJECT_HEADER_FILE=$PROJECT_PATH/$PROJECT_DIR/$PROJECT_NAME.h
+fi
+
+
+#
+# This takes the following parameters:
+#   $1 - A string that is either YES or NO
+#
+# If $1 is YES, then output a spacer line. Otherwise, don't.
+#
+function outputSpacer ()
+{
+    #
+    # If the flag is YES, then output a spacer.
+    #
+    if [ "$1" == "YES" ]; then
+        echo ""
+    fi
+}
+
+
+#
+# This takes the following parameters:
+#   $1 - Name of a variable that contains the name of a template file
+#   $2 - Name of a variable that contains the file to be generated by the template
+#   $3 - Type of template we're checking, for warning purposes. 
+#
+# Performs the following checks:
+#   1) Does the template file exist?
+#   2) Is there an output file variable?
+#   2) Does the output file exist?
+#
+# If the template file doesn't exist, then the value of both variables is removed
+# so that we know not to bother outputting a template later on.
+#
+# If the template file does exist, and so does the output file, then we prompt the
+# user to see if they want to overwrite the file or not. If NO, the output filename
+# is changed to include the current date and time, and it will be up to the user to
+# determine what to do with the new file.
+#
+# If the value of the varaible that is holding the output filename is empty, then
+# there shouldn't be an output file. In this case, both values are unset, but no warning
+# will be generated, because there was no file going to be generated anyway.
+#
+# The value of $3 is used to generate warnings for missing templates, and in the messages
+# if we need to rename the output file.
+#
+# If any text is generated to the screen in a way that would require the caller to output
+# an empty line after it's execution in order to space output, then CHECK_TEMPLATE_WARN 
+# will be set to let the caller know. otherwise, it's value will be unset after the Call.
+#
+function checkTemplate ()
+{
+    #
+    # If there is no value for $2, then there was going to be no output. In this case
+    # just unset the first value and return quietly.
+    #
+    if [ "${!2}" == "" ]; then
+        unset CHECK_TEMPLATE_WARN $1 $2
+        return
+    fi
+
+
+    #
+    # Since $1 is the name of the template file variable, ${!1} will be the
+    # actual value being stored by the variable of that name. If the file it
+    # references does not exist, then unset both values
+    #
+    if [ ! -f "${!1}" ]; then
+        #
+        # Generate a warning and set a flag so the caller knows that a warning
+        # was generated. Then unset the variables and return. unset takes the names
+        # of variables, which is what we were given.
+        #
+        echo "*** Warning: No template file to generate $3"
+        CHECK_TEMPLATE_WARN=YES
+        unset $1 $2
+        return 
+    fi
+
+
+    #
+    # Check to see if the output file exists. If it does, then we need to take
+    # extra action.
+    #
+    if [ -f ${!2} ]; then
+        #
+        # Unset the REPLY variable (in case we were called before), then ask if we
+        # should overwrite the file.
+        #
+        unset REPLY
+        read -p "*** `basename ${!2}` already exists in project $PROJECT_NAME. Overwrite? [no] : "
+
+        #
+        # Check to see what happened and act accordingly. 
+        #
+        echo ${REPLY:=NO} | grep -v "^[Yy]" > /dev/null
+        if [ $? -eq 0 ]; then
+            echo "*** Generating template to a new unique name"
+            eval $2=${!2}.`date +"%m_%d_%Y_%H_%M_%S"`
+        else
+            echo "*** Overwriting existing file"
+        fi
+
+        #
+        # Output a seperator since we know we will want it, and unset the flag to let the caller
+        # know it doesn't need to output a spacer on it's own.
+        #
+        echo ""
+        unset CHECK_TEMPLATE_WARN
+    fi
+}
+
+
+#
+# For each of the templates we want to expand, check to see if the template file
+# exists.  If it doesn't, unset the variable that stores the template name and the
+# file that would be generated. Later on, we only need to worry about generating
+# a file from the template if one of the two variables that control it is set
+# (since they either both will be, or neither will be). Afterwards, if any warnings
+# were generated, output a spacer.
+#
+checkTemplate PROJECT_MAKEFILE_TEMPLATE PROJECT_MAKEFILE     "Makefile"
+checkTemplate PROJECT_SOURCE_TEMPLATE   PROJECT_SOURCE_FILE  "source file"
+checkTemplate PROJECT_HEADER_TEMPLATE   PROJECT_HEADER_FILE  "header file"
+outputSpacer  ${CHECK_TEMPLATE_WARN:-NO}
+
+
+#
+# If there is going to be a source file generated, then set up the variable that
+# will expand it into the Makefile for us. What this is depends on the language.
+#
+if [ "$PROJECT_SOURCE_FILE" != "" ]; then
+    case $PROJECT_LANGUAGE in
+        'c')
+            CFILE=`basename $PROJECT_SOURCE_FILE`
+            ;;
+
+        'cpp')
+            CPPFILE=`basename $PROJECT_SOURCE_FILE`
+            ;;
+
+        'objc')
+            MFILE=`basename $PROJECT_SOURCE_FILE`
+            ;;
+    esac
+fi
+
+
+#
+# If there is going to be a header file generated, then prepare the special conversion
+# of the header's name for inclusion into the template to generate automatic guard detection.
+#
+if [ "$PROJECT_HEADER_FILE" != "" ]; then
+    #
+    # First, get the base name of the header file. Next, use tr to translate all lowercase
+    # characters to uppercase. Lastly, use sed to replace all '.' with the word "dot".
+    #
+    PROJECT_HEADER_FILE_DEFINE=`basename $PROJECT_HEADER_FILE`
+    PROJECT_HEADER_FILE_DEFINE=`echo $PROJECT_HEADER_FILE_DEFINE | tr [:lower:] [:upper:] | sed -e "s/\./dot/"`
+fi
+
+
+#
+# Make the directory that the project will be in
+#
+mkdir -p $PROJECT_PATH/$PROJECT_DIR
+
+
+#
+# Generate output source file if we need to. For sources, this is a
+# simple copy operation.
+#
+if [ "$PROJECT_SOURCE_TEMPLATE" != "" ]; then
+    echo "*** Generating `basename $PROJECT_SOURCE_FILE`"
+    cp $PROJECT_SOURCE_TEMPLATE $PROJECT_SOURCE_FILE
+fi
+
+
+#
+# Generate output header file if we need to. This needs special operation
+# since we want to sub in a special form of the header name so that the template
+# can generate ifdef gaurds automagically.
+#
+if [ "$PROJECT_HEADER_TEMPLATE" != "" ]; then
+    echo "*** Generating `basename $PROJECT_HEADER_FILE`"
+    cat $PROJECT_HEADER_TEMPLATE | sed -e "s/@@HEADERNAME@@/$PROJECT_HEADER_FILE_DEFINE/" > $PROJECT_HEADER_FILE
+fi
+
+
+#
+# If there is a Makefile template, then generate it.
+#
+if [ "$PROJECT_MAKEFILE_TEMPLATE" != "" ]; then
+    echo "*** Generating Makefile"
+
+
+    #
+    # Now, put a makefile into the project. Use the template selected
+    # above, and substitute in the name, base and type. Not all templates
+    # need all options, but this is easier overall. 
+    #
+    cat $PROJECT_MAKEFILE_TEMPLATE | sed -e "s/@@NAME@@/$PROJECT_NAME/" \
+                                         -e "s/@@TYPE@@/$PROJECT_TYPE/" \
+                                         -e "s^@@BASE@@^$PROJECT_BASEDIR_PATH^" \
+                                         -e "s^@@CFILES@@^$CFILE^" \
+                                         -e "s^@@CPPFILES@@^$CPPFILE^" \
+                                         -e "s^@@MFILES@@^$MFILE^" > $PROJECT_MAKEFILE
+fi
+
+
+#
+# For the special project type "sub", we want to do extra work on the template Makefile
+#
+if [ "$PROJECT_TYPE" == "sub" ]; then
+    #
+    # Find a list of all directories in the project path
+    #
+    PROJECT_SUBDIRS=`find $PROJECT_PATH/$PROJECT_DIR -name \* -type d -print`
+
+
+    #
+    # Do something for all directories.
+    #
+    for DIR in $PROJECT_SUBDIRS 
+    do
+        #
+        # Each directory we found contains the project directory as well, so
+        # trim that off
+        #
+        DIR=`basename $DIR`
+
+
+        #
+        # If the directory isn't the project directory, handle it. This is because
+        # the list of directories that find finds includes the project directory, 
+        # so we don't want to handle that one.
+        #
+        if [ "$DIR" != "$PROJECT_DIR" ]; then
+            echo -e "\t@cd $DIR && \$(MAKE) \$@" >> $PROJECT_MAKEFILE
+            echo "*** Adding a make rule for subproject $DIR"
+        fi
+    done
+
+
+    #
+    # Now, tack on a template line for adding something new.
+    #
+    echo -e "#\t@cd project && \$(MAKE) \$@" >> $PROJECT_MAKEFILE
+fi
+
+
+#
+# All done
+#
+echo ""
+echo Project $PROJECT_NAME of type $PROJECT_TYPE added to $CURRENT_TREE as $PROJECT_PATH/$PROJECT_DIR
+echo ""
+

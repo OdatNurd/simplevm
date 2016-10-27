@@ -1,0 +1,21 @@
+/*****************************************************************************/
+
+#import <Gen/Gen.h>
+
+/*****************************************************************************/
+
+int main (int argc, char **argv)
+{
+    /* Init Gen. This will get us an Autorelease pool by default. */
+    genInit ();
+
+    /* Shut down gen now. This will get rid of the default pool. */
+    genShutdown ();
+
+    return 0;
+}
+
+/*****************************************************************************/
+
+/* vim:tw=79
+ */
