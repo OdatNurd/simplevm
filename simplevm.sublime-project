@@ -1,0 +1,45 @@
+{
+	"folders":
+	[
+		{
+            "folder_exclude_patterns":
+            [
+                ".obj", "lib", "bin"
+            ],
+            "file_exclude_patterns":
+            [
+                "vm/vm"
+            ],
+			"path": "."
+		}
+	],
+	"settings":
+	{
+	},
+    "build_systems":
+    [
+        {
+            // Override the Make build system to apply to the current directory
+            "name": "Make",
+            "shell_cmd": "make COLOUR_WARNINGS=NO",
+            "file_regex": "^(..[^:\n]*):([0-9]+):?([0-9]+)?:? (.*)$",
+            "working_dir": "${file_path}",
+
+            // Here's a keen bit of business; turn off word wrap in the panel and turn off
+            // showing you that you're an idiot regarding your path
+            "word_wrap": "false",
+            "quiet": "true",
+
+            "variants": [
+                {
+                    "name": "Clean",
+                    "shell_cmd": "make COLOUR_WARNINGS=NO clean",
+                },
+                {
+                    "name": "Run",
+                    "shell_cmd": "make COLOUR_WARNINGS=NO run",
+                },
+            ]
+        },
+    ]
+}
